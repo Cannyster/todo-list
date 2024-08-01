@@ -1,26 +1,41 @@
 import styles from "./TaskManager.module.css";
-import { Task } from "./Task";
+import { Item } from "./Item";
 import { Empty } from "./Empty";
 import { ChangeEvent, FormEvent, useState } from "react";
 import { PlusCircle } from "phosphor-react";
 import { useRef } from "react";
 
+export interface Task {
+  id: number;
+  content: string;
+  isChecked: boolean;
+}
+
 export function TaskManager() {
-  const [tasks, setTasks] = useState([]); // iniciando o estado de tarefas, com 1 tarefa
+  const [tasks, setTasks] = useState<Task[]>([]); // iniciando o estado de tarefas, com 1 tarefa
   const [newTaskText, setNewTaskText] = useState(""); // estado de texto de tarefas
-  const [taskCount, setTaskCount] = useState(0); // contador para o total de tarefas
-  const [taskCompleteCount, setTaskCompleteCount] = useState(0); // contador para o total de tarefas concluídas
-  const [isCompleteTask, setIsCompleteTask] = useState<boolean>(false); // estado de conslusão das tasks
 
   const isTaskTextEmpty = newTaskText.length == 0; // verificador de texto de novas tasks
+
+  const tasksCounter = tasks.length;
 
   const buttonRef = useRef(null);
 
   function handleCreateNewTask(event: FormEvent) {
     event.preventDefault;
-    setTasks([...tasks, newTaskText]); //chamando a função que atualiza o estado newTaskText
+
+    if (!newTaskText) {
+      return;
+    }
+
+    const newTask: Task = {
+      id: new Date().getTime(),
+      content: newTaskText,
+      isChecked: false,
+    };
+
+    setTasks((tasks) => [...tasks, newTask]);
     setNewTaskText(""); // voltando o valor do setNewTaskText para o padrão, string vazia
-    setTaskCount(taskCount + 1); // adicionando uma tarefa a lista de tarefas existentes
   }
 
   function handleNewTaskChange(event: ChangeEvent<HTMLTextAreaElement>) {
@@ -28,23 +43,29 @@ export function TaskManager() {
     setNewTaskText(event.target.value);
   }
 
-  function deleteTask(taskToDelete: string) {
-    const tasksWithoutDeletedOne = tasks.filter((task) => {
-      return task != taskToDelete;
+  function handleRemoveTask(id: number) {
+    const filteredTasks = tasks.filter((task) => task.id !== id);
+    setTasks(filteredTasks);
+  }
+
+  function handleToggleTask({ id, value }: { id: number; value: boolean }) {
+    const updatedTasks = tasks.map((tasks) => {
+      if (tasks.id === id) {
+        return { ...tasks, isChecked: value };
+      }
+
+      return { ...tasks };
     });
 
-    setTasks(tasksWithoutDeletedOne);
-    setTaskCount(taskCount - 1);
+    setTasks(updatedTasks);
+  }
 
-    if (isCompleteTask) {
-      setTaskCompleteCount(taskCompleteCount - 1);
+  const checkedTaskCounter = tasks.reduce((prevValue, currentTask) => {
+    if (currentTask.isChecked) {
+      return prevValue + 1;
     }
-  }
-
-  function toggleTaskStatus() {
-    setIsCompleteTask(true);
-    setTaskCompleteCount(taskCompleteCount + 1);
-  }
+    return prevValue;
+  }, 0);
 
   const handleKeyDown = (event) => {
     if (event.key === "Enter") {
@@ -82,13 +103,15 @@ export function TaskManager() {
         <header className={styles.taskManagerHeader}>
           <div className={styles.taskCounter}>
             <strong className={styles.text1}>Tarefas Criadas</strong>
-            <span>{taskCount}</span>
+            <span>{tasksCounter}</span>
           </div>
           <div className={styles.taskCounter}>
             <strong className={styles.text2}>Concluídas</strong>
             <span>
               {" "}
-              {tasks.length > 0 ? taskCompleteCount + " de " + taskCount : 0}
+              {tasksCounter > 0
+                ? checkedTaskCounter + " de " + tasksCounter
+                : 0}
             </span>
           </div>
         </header>
@@ -96,11 +119,11 @@ export function TaskManager() {
         {tasks.length > 0 ? (
           tasks.map((task) => {
             return (
-              <Task
-                key={task}
-                content={task}
-                onDeleteTask={deleteTask}
-                onToggleTaskStatus={toggleTaskStatus}
+              <Item
+                key={task.id}
+                data={task}
+                removeTask={handleRemoveTask}
+                toggleTaskStatus={handleToggleTask}
               />
             );
           })
