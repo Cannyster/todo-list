@@ -15,11 +15,23 @@ export function TaskManager() {
   const [tasks, setTasks] = useState<Task[]>([]); // iniciando o estado de tarefas, com 1 tarefa
   const [newTaskText, setNewTaskText] = useState(""); // estado de texto de tarefas
 
-  const isTaskTextEmpty = newTaskText.length == 0; // verificador de texto de novas tasks
-
+  const isTaskTextEmpty = newTaskText.length == 0;
   const tasksCounter = tasks.length;
-
   const buttonRef = useRef(null);
+
+  const checkedTaskCounter = tasks.reduce((prevValue, currentTask) => {
+    if (currentTask.isChecked) {
+      return prevValue + 1;
+    }
+    return prevValue;
+  }, 0);
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleCreateNewTask(event);
+    }
+  };
 
   function handleCreateNewTask(event: FormEvent) {
     event.preventDefault;
@@ -59,21 +71,6 @@ export function TaskManager() {
 
     setTasks(updatedTasks);
   }
-
-  const checkedTaskCounter = tasks.reduce((prevValue, currentTask) => {
-    if (currentTask.isChecked) {
-      return prevValue + 1;
-    }
-    return prevValue;
-  }, 0);
-
-  const handleKeyDown = (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      handleCreateNewTask(event);
-    }
-  };
-
   return (
     <div>
       <div className={styles.janela}>
